@@ -1,41 +1,61 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
-import { createBooking } from '../api/api';
+// src/screens/EventDetailsScreen.tsx
 
-// Dummy event data (replace with API call later)
-const DUMMY_EVENT = {
-    id: '1',
-    title: 'Rooftop Party',
-    date: '2023-06-15',
-    time: '8:00 PM',
-    price: 25,
-    location: 'Skyline Terrace, 123 Main St, San Francisco, CA',
-    description: 'Join us for an unforgettable night under the stars with great music, drinks, and views of the city.',
-    image: 'https://example.com/event-image.jpg',
-};
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
+import { useRoute } from '@react-navigation/native';
+import { getEventDetails, createBooking } from '../api/api';
 
-function EventDetailsScreen({ route, navigation }) {
+function EventDetailsScreen() {
+    const [event, setEvent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [booking, setBooking] = useState(false);
+    const route = useRoute();
     const { eventId } = route.params;
-    // In a real app, you would fetch the event details using the eventId
-    const event = DUMMY_EVENT;
+
+    useEffect(() => {
+        fetchEventDetails();
+    }, []);
+
+    const fetchEventDetails = async () => {
+        try {
+            const eventData = await getEventDetails(eventId);
+            setEvent(eventData);
+        } catch (error) {
+            console.error('Error fetching event details:', error);
+            Alert.alert('Error', 'Failed to load event details');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleBooking = async () => {
         try {
-            // TODO: Replace 'user123' with actual user ID from authentication
-            await createBooking(event.id, 'user123');
+            setBooking(true);
+            await createBooking(eventId);
             Alert.alert('Success', 'Event booked successfully!');
         } catch (error) {
-            Alert.alert('Error', 'Failed to book event. Please try again.');
+            console.error('Error booking event:', error);
+            Alert.alert('Error', 'Failed to book event');
+        } finally {
+            setBooking(false);
         }
     };
+
+    if (loading) {
+        return <ActivityIndicator size="large" color="#0000ff" />;
+    }
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>{event.title}</Text>
-            <Text style={styles.date}>{event.date}</Text>
+            <Text style={styles.date}>{new Date(event.date).toLocaleDateString()}</Text>
             <Text style={styles.description}>{event.description}</Text>
             <Text style={styles.price}>Price: ${event.price}</Text>
-            <Button title="Book Now" onPress={handleBooking} />
+            <Button
+                title={booking ? "Booking..." : "Book Now"}
+                onPress={handleBooking}
+                disabled={booking}
+            />
         </View>
     );
 }
@@ -43,25 +63,26 @@ function EventDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
+        padding: 16,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     date: {
-        fontSize: 18,
-        marginBottom: 10,
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 8,
     },
     description: {
         fontSize: 16,
-        marginBottom: 20,
+        marginBottom: 16,
     },
     price: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 20,
+        marginBottom: 16,
     },
 });
 

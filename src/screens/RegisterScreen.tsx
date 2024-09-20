@@ -1,22 +1,33 @@
+// src/screens/RegisterScreen.tsx
+
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/authSlice';
-import api from '../api/api';
+import { register } from '../api/api';
 
-const RegisterScreen = ({ navigation }) => {
+function RegisterScreen({ navigation }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const dispatch = useDispatch();
 
     const handleRegister = async () => {
+        if (!name || !email || !password) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
+
+        setIsLoading(true);
         try {
-            const response = await api.post('/users/register', { name, email, password });
-            dispatch(setCredentials({ token: response.data.token, user: response.data.user }));
+            const userData = await register(name, email, password);
+            dispatch(setCredentials(userData));
             navigation.navigate('Main');
         } catch (error) {
             Alert.alert('Registration Failed', error.response?.data?.message || 'An error occurred');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -43,11 +54,14 @@ const RegisterScreen = ({ navigation }) => {
                 onChangeText={setPassword}
                 secureTextEntry
             />
-            <Button title="Register" onPress={handleRegister} />
-            <Button title="Back to Login" onPress={() => navigation.navigate('Login')} />
+            <Button
+                title={isLoading ? "Registering..." : "Register"}
+                onPress={handleRegister}
+                disabled={isLoading}
+            />
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {

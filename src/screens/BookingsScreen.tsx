@@ -1,33 +1,56 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+// src/screens/BookingsScreen.tsx
 
-// Dummy data for bookings
-const DUMMY_BOOKINGS = [
-    { id: '1', eventName: 'Rooftop Party', date: '2023-06-15', status: 'Confirmed' },
-    { id: '2', eventName: 'House Music Night', date: '2023-06-16', status: 'Pending' },
-    // Add more dummy bookings...
-];
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { getUserBookings } from '../api/api';
 
-function BookingItem({ booking }: { booking: { eventName: string; date: string; status: string } }) {
-    return (
-        <TouchableOpacity style={styles.bookingItem}>
-            <Text style={styles.eventName}>{booking.eventName}</Text>
-            <Text style={styles.bookingDate}>{booking.date}</Text>
-            <Text style={[styles.bookingStatus, { color: booking.status === 'Confirmed' ? 'green' : 'orange' }]}>
-                {booking.status}
-            </Text>
-        </TouchableOpacity>
-    );
+interface Booking {
+    id: string;
+    event: {
+        id: string;
+        title: string;
+        date: string;
+    };
+    status: string;
+    createdAt: string;
 }
 
 function BookingsScreen() {
+    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchBookings();
+    }, []);
+
+    const fetchBookings = async () => {
+        try {
+            const fetchedBookings = await getUserBookings();
+            setBookings(fetchedBookings);
+        } catch (error) {
+            console.error('Error fetching bookings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return <ActivityIndicator size="large" color="#0000ff" />;
+    }
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Your Bookings</Text>
+            <Text style={styles.title}>My Bookings</Text>
             <FlatList
-                data={DUMMY_BOOKINGS}
-                renderItem={({ item }) => <BookingItem booking={item} />}
+                data={bookings}
                 keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <View style={styles.bookingItem}>
+                        <Text style={styles.eventName}>{item.event.title}</Text>
+                        <Text style={styles.bookingDate}>Date: {new Date(item.event.date).toLocaleDateString()}</Text>
+                        <Text style={styles.bookingStatus}>Status: {item.status}</Text>
+                    </View>
+                )}
             />
         </View>
     );

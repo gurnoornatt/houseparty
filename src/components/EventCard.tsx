@@ -1,10 +1,25 @@
+// src/components/EventCard.tsx
+
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 
-function EventCard({ event, onPress }) {
+interface Event {
+    id: string;
+    title: string;
+    date: string;
+    price: number;
+    image: string;
+}
+
+interface EventCardProps {
+    event: Event;
+    onPress: () => void;
+}
+
+function EventCard({ event, onPress }: EventCardProps) {
     return (
-        <TouchableOpacity onPress={onPress} style={styles.card} testID="event-card">
-            <Image source={{ uri: event.image }} style={styles.image} testID="event-image" />
+        <TouchableOpacity onPress={onPress} style={styles.card}>
+            <Image source={{ uri: event.image }} style={styles.image} />
             <View style={styles.info}>
                 <Text style={styles.title}>{event.title}</Text>
                 <Text style={styles.date}>{event.date}</Text>

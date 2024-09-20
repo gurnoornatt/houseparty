@@ -1,58 +1,60 @@
-import React, { useEffect } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import EventCard from '../components/EventCard';
 import { getEvents } from '../api/api';
-import { setEvents, setLoading, setError } from '../store/eventsSlice';
-import { RootState } from '../store/store';
 
-const HomeScreen = ({ navigation }) => {
-    const dispatch = useDispatch();
-    const { events, loading, error } = useSelector((state: RootState) => state.events);
+function HomeScreen() {
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const navigation = useNavigation();
 
     useEffect(() => {
         fetchEvents();
     }, []);
 
     const fetchEvents = async () => {
-        dispatch(setLoading(true));
         try {
-            const eventsData = await getEvents();
-            dispatch(setEvents(eventsData));
+            const fetchedEvents = await getEvents();
+            setEvents(fetchedEvents);
         } catch (error) {
-            dispatch(setError('Error fetching events'));
+            console.error('Error fetching events:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleEventPress = (event) => {
-        navigation.navigate('EventDetails', { event });
+    const handleEventPress = (eventId) => {
+        navigation.navigate('EventDetails', { eventId });
     };
 
     if (loading) {
-        return <View><Text>Loading...</Text></View>;
-    }
-
-    if (error) {
-        return <View><Text>{error}</Text></View>;
+        return <ActivityIndicator size="large" color="#0000ff" />;
     }
 
     return (
         <View style={styles.container}>
+            <Text style={styles.title}>Discover Events</Text>
             <FlatList
                 data={events}
                 renderItem={({ item }) => (
-                    <EventCard event={item} onPress={() => handleEventPress(item)} />
+                    <EventCard event={item} onPress={() => handleEventPress(item.id)} />
                 )}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.id}
             />
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
+        padding: 16,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 16,
     },
 });
 
